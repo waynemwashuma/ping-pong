@@ -1,3 +1,5 @@
+import {Vector2} from 'hisabati'
+
 const canvas =document.getElementById("canvas");
 canvas.height =window.innerHeight;
 canvas.width=window.innerWidth;
@@ -14,30 +16,28 @@ window.addEventListener('keyup',function(e){
 
 function paddleCollisionWithEdges(paddle){
     if(paddle.pos.y<=0){
-        paddle.pos.y=0;
+        paddle.pos.set(paddle.pos.x,0);
     }
     if(paddle.pos.y +paddle.height>=canvas.height){
-        paddle.pos.y=canvas.height -paddle.height;
+        paddle.pos.set(paddle.pos.x,canvas.height -paddle.height);
     }
 
 }
 function paddleCollisionWithBall(ball,paddle){
-    let dx=Math.abs(ball.pos.x-paddle.getCenter().x);
-    let dy=Math.abs(ball.pos.y-paddle.getCenter().y);
+    const delta = Vector2.subtract(ball.pos,paddle.getCenter());
+    let dx=Math.abs(delta.x);
+    let dy=Math.abs(delta.y);
     if(dx<=(ball.radius+paddle.getHalfWidth())&&dy<=(paddle.getHalfHeight()+ball.radius)) {
-        ball.velocity.x *= -1;
+        ball.velocity.set(-ball.velocity.x,ball.velocity.y);
     }   
 }
-function vec2(x,y){
-    return{x:x,y:y};
-}
+
 function Ball(pos,velocity,radius){
     this.pos=pos;
     this.velocity=velocity;
     this.radius=radius;
     this.update= function(){
-        this.pos.x+=this.velocity.x;
-        this.pos.y+=this.velocity.y;
+        this.pos.add(this.velocity);
 
     };
     this.draw=function(){
@@ -54,30 +54,27 @@ function Ball(pos,velocity,radius){
 function player2Ai(ball,paddle){
     if(ball.velocity.x>0){
         if(ball.pos.y>paddle.pos.y){
-            paddle.pos.y+=paddle.velocity.y;
+            paddle.pos.add(paddle.velocity);
             if(paddle.pos.y+paddle.height>=canvas.height){
-                paddle.pos.y=canvas.height-paddle.height;
+                paddle.pos.set(paddle.pos.x,canvas.height-paddle.height);
             }
         }
     if(ball.pos.y<paddle.pos.y){
-        paddle.pos.y-=paddle.velocity.y;
+        paddle.pos.subtract(paddle.velocity);
         if(paddle.pos.y<=0){
-            paddle.pos.y=0;
+            paddle.pos.set(paddle.pos.x,0);
         }
     }
     }
 }
 function respawnBa(ball){
     if(ball.velocity.x>0){
-        ball.pos.x=canvas.width-150;
-        ball.pos.y=(Math.random()*(canvas.height-200))+100;
+        ball.pos.set(canvas.width-150,(Math.random()*(canvas.height-200))+100);
     }
     if(ball.velocity.x<0){
-       ball.pos.x=150;
-       ball.pos.y=(Math.random()*(canvas.height-200))+100;
+       ball.pos.set(150,(Math.random()*(canvas.height-200))+100);
     }
-    ball.velocity.x*=-1;
-    ball.velocity.y*=-1;
+    ball.velocity.reverse();
 
 }
 function increaseScore(ball, paddle){
@@ -132,7 +129,7 @@ function drawGameScene(){
 }
 function ballCollisionOnTheEdges(ball){
     if(ball.pos.y + ball.radius >= canvas.height){
-        ball.velocity.y *= -1;
+        ball.velocity.set(ball.velocity.x,-ball.velocity.y);
     }
     /*if(ball.pos.x + ball.radius>= canvas.width){
         ball.velocity.x *= -1;
@@ -142,7 +139,7 @@ function ballCollisionOnTheEdges(ball){
         ball.velocity.x *=-1;
     }*/
    if(ball.pos.y - ball.radius<=0){
-        ball.velocity.y *=-1;
+        ball.velocity.set(ball.velocity.x,-ball.velocity.y);
     }
 }
 function Paddle(pos,velocity,width,height){
@@ -153,10 +150,10 @@ function Paddle(pos,velocity,width,height){
     this.score=0;
     this.update= function(){
         if(keysPressed[KEY_UP]){
-            this.pos.y-=this.velocity.y;
+            this.pos.subtract(this.velocity);
         }
         if(keysPressed[KEY_DOWN]){
-            this.pos.y+=this.velocity.y;
+            this.pos.add(this.velocity);
         }
     };
     this.draw= function(){
@@ -170,7 +167,7 @@ function Paddle(pos,velocity,width,height){
         return this.height/2;
     };
     this.getCenter=function(){
-        return vec2(
+        return new Vector2(
             this.pos.x+this.getHalfWidth(),this.pos.y+this.getHalfHeight()
         );
 
@@ -178,9 +175,9 @@ function Paddle(pos,velocity,width,height){
 
 
 }
-const ball= new Ball(vec2(200,200),vec2(12,12),10);
-const paddle1=new Paddle(vec2(5,30),vec2(15,15),20,150);
-const paddle2=new Paddle(vec2(canvas.width-20,50),vec2(14,14),20,150);
+const ball= new Ball(new Vector2(200,200),new Vector2(12,12),10);
+const paddle1=new Paddle(new Vector2(5,30),new Vector2(0,15),20,150);
+const paddle2=new Paddle(new Vector2(canvas.width-20,50),new Vector2(0,14),20,150);
 function gameUpdate(){
    ball.update();
    paddle1.update();
